@@ -1,3 +1,4 @@
+import argparse
 from clize import run
 import sys
 import torch.nn as nn
@@ -8,7 +9,7 @@ from torch.autograd import Variable
 from skimage.io import imsave
 
 # Specific to the model
-from image_preprocessor import transform
+from image_preprocessor import transform, inverse_transform
 from batch_classifier import Net
 
 
@@ -46,18 +47,8 @@ def detect(filename, mask_threshold=0.0001, xscale=1.5, yscale=1.5, out='out.png
     mask = xgrad.data.abs().max(1)[0].cpu().numpy() >= mask_threshold
     mask = mask[0]
     # Deprocess image
-    image[0, :, :] *= 0.229
-    image[0, :, :] += 0.485
-
-    image[1, :, :] *= 0.224
-    image[1, :, :] += 0.456
-
-    image[2, :, :] *= 0.225
-    image[2, :, :] += 0.406
-    image = image.transpose((1, 2, 0))
-
+    image = inverse_transform(image)
     # Get bounding box
-
     yy, xx = np.indices(mask.shape)
     mx = xx[mask].mean()
     mx_std = xx[mask].std()
@@ -82,4 +73,17 @@ def detect(filename, mask_threshold=0.0001, xscale=1.5, yscale=1.5, out='out.png
 
 
 if __name__ == '__main__':
-    detect(sys.argv[1])
+    parser = argparse.ArgumentParser()
+    parser.add_argument("filename", help="image path") 
+    parser.add_argument("--mask-threshold", help='Mask threshold', default=0.0001)
+    parser.add_argument("--xscale", help='scale', default=1.5)
+    parser.add_argument("--yscale", help='scale', default=1.5)
+    parser.add_argument("--out", help='out image path', default='out.png')
+    args = parser.parse_args()
+    detect(
+        args.filename,
+        mask_threshold=args.mask_threshold,
+        xscale=args.xscale,
+        yscale=args.yscale,
+        out=args.out
+    )
