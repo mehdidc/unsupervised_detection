@@ -1,6 +1,4 @@
 import argparse
-from clize import run
-import sys
 import torch.nn as nn
 import torch
 import numpy as np
